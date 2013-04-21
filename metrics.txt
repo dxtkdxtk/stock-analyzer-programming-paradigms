@@ -4,3 +4,5 @@ Metrics to measure on:
 
 *Analysis of the market as a whole for growth / volatility in different time periods
 
+
+text file for each ticker, each line is a day.
