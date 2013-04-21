@@ -41,7 +41,6 @@ class MainWindow(QMainWindow):
 		#Set the title and size of window
 		self.setWindowTitle("Stock Analyzer")
 		self.setGeometry(400,500,400,400)
-		#self.setWindowIcon(QIcon("icon.png")) 
 		
 		##FILE MENU##
 		#create the action for opening a file
