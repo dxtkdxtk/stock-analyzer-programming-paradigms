@@ -48,6 +48,16 @@ class MainWindow(QMainWindow):
 		loadAction.setStatusTip('Load a file')
 		loadAction.triggered.connect(self.fileLoad)
 		
+		#create the action for saving a file of the current data
+		saveActionCurrent = QAction('Save Current',self)
+		saveActionCurrent.setStatusTip('Save a file containing the current data')
+		saveActionCurrent.triggered.connect(self.fileSaveCurrent)
+		
+		#create the action for saving a file of the historical data
+		saveActionHistorical = QAction('Save Historical',self)
+		saveActionHistorical.setStatusTip('Save a file containing the historical data')
+		saveActionHistorical.triggered.connect(self.fileSaveHistorical)
+		
 		#displays status tip (for the open file selection)
 		self.statusBar()
 				
@@ -55,6 +65,8 @@ class MainWindow(QMainWindow):
 		menubar = self.menuBar()
 		fileMenu = menubar.addMenu('&File')
 		fileMenu.addAction(loadAction)
+		fileMenu.addAction(saveActionCurrent)
+		fileMenu.addAction(saveActionHistorical)
 		############
 		
 		#Create  a tab widget to manage GUI
@@ -94,28 +106,27 @@ class MainWindow(QMainWindow):
 		#create components
 		self.stockTickerLabel = QLabel("Stock Ticker Label")
 		self.stockTicker = QLineEdit(self)
-		self.dateStartLabel = QLabel ("Start Date (\"YYYYMMDD\")")
-		self.dateStart = QLineEdit(self)
-		self.dateFinishLabel = QLabel ("Finish Date (\"YYYYMMDD\")")
-		self.dateFinish = QLineEdit(self)
+		self.dateStartLabel = QLabel ("Start Date")
+		self.calStart = QCalendarWidget()
+		self.dateFinishLabel = QLabel ("Finish Date")
+		self.calFinish = QCalendarWidget()
 		self.historicalDataButton=QPushButton("Return Data", self)
 		self.historicalDataLabel = QLabel("Historical Data")
 		self.historicalData = QTextBrowser(self)
-		self.cal = QCalendarWidget()
-		
+
+
 		#create tab
 		tab3=QWidget()
 		layout3= QVBoxLayout(tab3)
 		layout3.addWidget(self.stockTickerLabel)
 		layout3.addWidget(self.stockTicker)
 		layout3.addWidget(self.dateStartLabel)
-		layout3.addWidget(self.dateStart)
+		layout3.addWidget(self.calStart)
 		layout3.addWidget(self.dateFinishLabel)
-		layout3.addWidget(self.dateFinish)
+		layout3.addWidget(self.calFinish)
 		layout3.addWidget(self.historicalDataButton)
 		layout3.addWidget(self.historicalDataLabel)
 		layout3.addWidget(self.historicalData)
-		layout3.addWidget(self.cal)
 		self.tab_widget.addTab(tab3, "Historical Data Pull")
 
 		#set up layout of overall GUI
@@ -133,7 +144,8 @@ class MainWindow(QMainWindow):
 		self.connect(self.historicalDataButton,SIGNAL("clicked()"),self.historicalDataButtonClick)
 		
 		        # Connect the clicked signal to the centre handler
-		self.connect(self.cal, SIGNAL('selectionChanged()'), self.date_changed)
+		self.connect(self.calStart, SIGNAL('selectionChanged()'), self.date_changed)
+		self.connect(self.calFinish, SIGNAL('selectionChanged()'), self.date_changed)
 		
 	#function to manage opening files	
 	def fileLoad(self):
@@ -151,6 +163,18 @@ class MainWindow(QMainWindow):
 			self.tab_widget.setCurrentWidget (self.tab2)
 			#tab2.raise_()
 			
+	def fileSaveCurrent(self):
+		FilePath = QFileDialog.getSaveFileName()
+		if(FilePath):
+			f=open(FilePath,'w')
+			f.write(str(self.matches.toPlainText()))
+	
+	def fileSaveHistorical(self):
+		FilePath = QFileDialog.getSaveFileName()
+		if(FilePath):
+			f=open(FilePath,'w')
+			f.write(str(self.historicalData.toPlainText()))
+	
 	#function to manage the button click parse functionality
 	def buttonClick(self):
 		#convert the inputs to text
@@ -171,28 +195,60 @@ class MainWindow(QMainWindow):
 	def historicalDataButtonClick(self):
 		#convery the inputs to text
 		tickerSymbol = unicode(self.stockTicker.text())
-		dateStart = unicode(self.dateStart.text())
-		dateFinish = unicode (self.dateFinish.text())
+	
+		#pull dates from calendar	
+		dateStart = self.calStart.selectedDate()
+		dateFinish = self.calFinish.selectedDate()
 		
-		#check to make sure all have values given
+		#convert dates to correct format for ystockquote
+		#start date
+		dateS = dateStart.toPyDate()
+		sYearString=str(dateS.year)
+		if (dateS.month < 10):
+			sMonthString="0"+str(dateS.month)
+		else:
+			sMonthString=str(dateS.month)
+		if (dateS.day < 10):
+			sDayString="0"+str(dateS.day)
+		else:
+			sDayString=str(dateS.day)
+			
+		dateStartString=sYearString+sMonthString+sDayString
+		
+		#finish date
+		dateF = dateFinish.toPyDate()
+		fYearString=str(dateF.year)
+		if (dateF.month < 10):
+			fMonthString="0"+str(dateF.month)
+		else:
+			fMonthString=str(dateF.month)
+		if (dateF.day < 10):
+			fDayString="0"+str(dateF.day)
+		else:
+			fDayString=str(dateF.day)
+			
+		dateFinishString=fYearString+fMonthString+fDayString
+		
+		#set output
+		outputString = loadHistoricalData(tickerSymbol, dateStartString, dateFinishString)
+		oString=""
+		for item in outputString.split("], ["):
+			oString+=item
+			oString+="\n"
+		self.historicalData.setText(oString)
+
+		#test if an error occured and display to the user if so
+		if (outputString[0:12]=="'<!doctype h"):
+			self.historicalData.setText("Invalid Ticker or invalid date!")
+	
+		#check to make sure ticker value given
 		if (tickerSymbol == ''):
 			self.historicalData.setText("No ticker symbol given!")
-		if (dateStart == ''):
-			self.historicalData.setText("No start date given!")
-		if (dateFinish == ''):
-			self.historicalData.setText("No finish date given!")
-		outputString = loadHistoricalData(tickerSymbol, dateStart, dateFinish)
-		self.historicalData.setText(outputString)
 		
 		
 	def date_changed(self):
-		# Fetch the currently selected date, this is a QDate object
-		date = self.cal.selectedDate()
-		# This is a gives us the date contained in the QDate as a native
-		# python date[time] object
-		pydate = date.toPyDate()
-		# Show this date in our label
-		self.historicalData.setText('The date is: %s' % pydate)
+		# Indicate to the user that the date has changed
+		self.historicalData.setText("The date has changed! Press button to refresh")
 		
 #set up and begin the application
 app=QApplication(sys.argv)
