@@ -7,7 +7,8 @@ from PyQt4.QtGui import *
 import sys
 
 import ystockquote
-
+import pyqtgraph as pg
+import numpy as np
 
 def loadData(tickerSymbol):
 	price=ystockquote.get_price(tickerSymbol)
@@ -40,7 +41,7 @@ class MainWindow(QMainWindow):
 		
 		#Set the title and size of window
 		self.setWindowTitle("Stock Analyzer")
-		self.setGeometry(400,500,400,400)
+		self.setGeometry(0,0,650,550)
 		
 		##FILE MENU##
 		#create the action for opening a file
@@ -114,7 +115,6 @@ class MainWindow(QMainWindow):
 		self.historicalDataLabel = QLabel("Historical Data")
 		self.historicalData = QTextBrowser(self)
 
-
 		#create tab
 		tab3=QWidget()
 		layout3= QVBoxLayout(tab3)
@@ -128,6 +128,58 @@ class MainWindow(QMainWindow):
 		layout3.addWidget(self.historicalDataLabel)
 		layout3.addWidget(self.historicalData)
 		self.tab_widget.addTab(tab3, "Historical Data Pull")
+		
+
+		#tab4 =>historical graphs
+		#create components
+		self.graphLabel= QLabel("Historical Graph:")
+		self.graph=pg.PlotWidget()
+		
+		#create tab
+		tab4=QWidget()
+		layout4= QVBoxLayout(tab4)
+		layout4.addWidget(self.graphLabel)
+		layout4.addWidget(self.graph)
+		self.tab_widget.addTab(tab4, "Historical Graph")
+		
+		
+		#tab5 => comparison
+		#create components
+		self.tickerOneLabel = QLabel("Stock Ticker (\"o\"):")
+		self.tickerOne = QLineEdit(self)
+		self.tickerTwoLabel = QLabel("Stock Ticker (\"+\"):")
+		self.tickerTwo = QLineEdit(self)
+		self.compareStartLabel = QLabel("Start Date")
+		self.compareStart = QCalendarWidget()
+		self.compareFinishLabel = QLabel("Finish Date")
+		self.compareFinish = QCalendarWidget()
+		self.compareButton = QPushButton("Compare!", self)
+		
+		#create tab
+		tab5=QWidget()
+		layout5=QVBoxLayout(tab5)
+		layout5.addWidget(self.tickerOneLabel)
+		layout5.addWidget(self.tickerOne)
+		layout5.addWidget(self.tickerTwoLabel)
+		layout5.addWidget(self.tickerTwo)
+		layout5.addWidget(self.compareStartLabel)
+		layout5.addWidget(self.compareStart)
+		layout5.addWidget(self.compareFinishLabel)
+		layout5.addWidget(self.compareFinish)
+		layout5.addWidget(self.compareButton)
+
+		self.tab_widget.addTab(tab5,"Comparison")
+		
+		
+		#tab6 => comparison graph
+		#create components
+		self.compareGraph=pg.PlotWidget()
+		
+		#create tab
+		tab6=QWidget()
+		layout6=QVBoxLayout(tab6)
+		layout6.addWidget(self.compareGraph)
+		self.tab_widget.addTab(tab6,"Comparison Graph")
 
 		#set up layout of overall GUI
 		mainLayout=QVBoxLayout()
@@ -139,11 +191,11 @@ class MainWindow(QMainWindow):
 	
 	
 
-		#manage connections of buttons
+		# Manage connections of buttons
 		self.connect(self.button,SIGNAL("clicked()"),self.buttonClick)
 		self.connect(self.historicalDataButton,SIGNAL("clicked()"),self.historicalDataButtonClick)
-		
-		        # Connect the clicked signal to the centre handler
+		self.connect(self.compareButton,SIGNAL("clicked()"),self.compareButtonClick)
+		# Manage calendar changes
 		self.connect(self.calStart, SIGNAL('selectionChanged()'), self.date_changed)
 		self.connect(self.calFinish, SIGNAL('selectionChanged()'), self.date_changed)
 		
@@ -245,6 +297,99 @@ class MainWindow(QMainWindow):
 		if (tickerSymbol == ''):
 			self.historicalData.setText("No ticker symbol given!")
 		
+		
+		#update graph
+		x=[]
+		y=[]
+		i=0
+		for line in oString.split("\n"):
+			if ((i!=0) and (i!=(len(oString.split("\n"))-1))):
+				item =line.split(",")
+				x.append(item[0].strip('\"\' -'))
+				y.append(float(item[4].strip('\"\' ')))
+			i=i+1
+		self.graph.clear()
+		self.graph.plot(y,pen='b',symbol='+')
+		
+	def compareButtonClick(self):
+		#convery the inputs to text
+		tickerSymbolOne = unicode(self.tickerOne.text())
+		tickerSymbolTwo = unicode(self.tickerTwo.text())
+	
+		#pull dates from calendar	
+		dateStart = self.compareStart.selectedDate()
+		dateFinish = self.compareFinish.selectedDate()
+		
+		#convert dates to correct format for ystockquote
+		#start date
+		dateS = dateStart.toPyDate()
+		sYearString=str(dateS.year)
+		if (dateS.month < 10):
+			sMonthString="0"+str(dateS.month)
+		else:
+			sMonthString=str(dateS.month)
+		if (dateS.day < 10):
+			sDayString="0"+str(dateS.day)
+		else:
+			sDayString=str(dateS.day)
+			
+		dateStartString=sYearString+sMonthString+sDayString
+		
+		#finish date
+		dateF = dateFinish.toPyDate()
+		fYearString=str(dateF.year)
+		if (dateF.month < 10):
+			fMonthString="0"+str(dateF.month)
+		else:
+			fMonthString=str(dateF.month)
+		if (dateF.day < 10):
+			fDayString="0"+str(dateF.day)
+		else:
+			fDayString=str(dateF.day)
+			
+		dateFinishString=fYearString+fMonthString+fDayString
+		
+		#graph first output
+		outputString = loadHistoricalData(tickerSymbolOne, dateStartString, dateFinishString)
+		oString=""
+		for item in outputString.split("], ["):
+			oString+=item
+			oString+="\n"		
+		
+		#update graph
+		x=[]
+		y=[]
+		i=0
+		for line in oString.split("\n"):
+			if ((i!=0) and (i!=(len(oString.split("\n"))-1))):
+				item =line.split(",")
+				x.append(item[0].strip('\"\' -'))
+				y.append(float(item[4].strip('\"\' ')))
+			i=i+1
+		
+		self.compareGraph.clear()
+		self.compareGraph.plot(y,pen='b',symbol='+')
+		
+		
+		#graoh second output
+		outputString = loadHistoricalData(tickerSymbolTwo, dateStartString, dateFinishString)
+		oString=""
+		for item in outputString.split("], ["):
+			oString+=item
+			oString+="\n"		
+		
+		#update graph
+		x=[]
+		y=[]
+		i=0
+		for line in oString.split("\n"):
+			if ((i!=0) and (i!=(len(oString.split("\n"))-1))):
+				item =line.split(",")
+				x.append(item[0].strip('\"\' -'))
+				y.append(float(item[4].strip('\"\' ')))
+			i=i+1
+		
+		self.compareGraph.plot(y,pen='g',symbol='o')
 		
 	def date_changed(self):
 		# Indicate to the user that the date has changed
