@@ -1,19 +1,19 @@
+#include <stdio.h>
+
 #include "SACudaLibrary.h"
 #include "SACudaKernel.h"
 
-extern "C" int TestCudaAdd(int a, int b)
+extern "C" IntArray FindInverseTrends(double * data, int length)
 {
-	int * d_result;
-	int result;
+	IntArray returnvalue;
 
-	cudaMalloc((void **)&d_result, sizeof(int));
+	return returnvalue;
+}
 
-	TestCudaAddKernel<<<1,1>>>(a, b, d_result);
+extern "C" DoubleArray CalculateMarketAverage(double * data, int entries, int timesteps)
+{
+	DoubleArray returnvalue;
 
-	cudaMemcpy((void *)&result, (void *)d_result, sizeof(int), cudaMemcpyDeviceToHost);
-
-	cudaFree(d_result);
-
-	return result;
+	return returnvalue;
 }
 
