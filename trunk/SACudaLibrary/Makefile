@@ -1,4 +1,5 @@
-COMPILE_FLAGS = -O3
+# Y u no set up cuda correctly...
+COMPILE_FLAGS = -O3 -I /afs/crc.nd.edu/x86_64_linux/cuda/4.0/cuda/include
 LINK_FLAGS =
 
 # Define objects included in the compilation here
