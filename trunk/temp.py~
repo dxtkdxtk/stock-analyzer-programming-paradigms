@@ -1,7 +1,0 @@
-#!/usr/bin/env python
-
-import ystockquote
-    
-    
-temp = ystockquote.get_historical_prices('GOOG', '20100410', '20130412')
-print temp 
