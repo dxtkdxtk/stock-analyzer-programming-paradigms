@@ -1,5 +1,12 @@
-__global__ void TestCudaAddKernel(int a, int b, int * c)
+#include "SACudaKernel.h"
+
+__global__ void FindInverseTrendsKernel(double * data, int length)
 {
-	*c = a + b;
+	
+}
+
+__global__ void CalculateMarketAverageKernel(double * data, int entries, int timesteps)
+{
+
 }
 
