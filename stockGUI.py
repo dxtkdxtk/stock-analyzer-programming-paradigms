@@ -434,8 +434,87 @@ class MainWindow(QMainWindow):
 		pass
 		
 	def marketAverage(self):
-		for item in self.MAStock.selectedItems():
-			print item.text()
+		#get dates
+		#pull dates from calendar	
+		dateStart = self.MAStart.selectedDate()
+		dateFinish = self.MAFinish.selectedDate()
+		
+		#convert dates to correct format for ystockquote
+		#start date
+		dateS = dateStart.toPyDate()
+		sYearString=str(dateS.year)
+		if (dateS.month < 10):
+			sMonthString="0"+str(dateS.month)
+		else:
+			sMonthString=str(dateS.month)
+		if (dateS.day < 10):
+			sDayString="0"+str(dateS.day)
+		else:
+			sDayString=str(dateS.day)
+			
+		dateStartString=sYearString+sMonthString+sDayString
+		
+		#finish date
+		dateF = dateFinish.toPyDate()
+		fYearString=str(dateF.year)
+		if (dateF.month < 10):
+			fMonthString="0"+str(dateF.month)
+		else:
+			fMonthString=str(dateF.month)
+		if (dateF.day < 10):
+			fDayString="0"+str(dateF.day)
+		else:
+			fDayString=str(dateF.day)
+			
+		dateFinishString=fYearString+fMonthString+fDayString
+		
+		#convert the selected stocks into a list of text stocks
+		stockList=[]
+		for stock in self.MAStock.selectedItems():
+			stockList.append(str(stock.text()))
+		
+		#create the string of data to pass to CUDA based on stocks and dates
+		outputList=[]
+		for stock in stockList:
+			#load data for each ticker
+			data = loadHistoricalData(stock, dateStartString, dateFinishString)
+			#skip invalid tickers
+			tempList=[]
+			if (data[0:12]=="'<!doctype h"):
+				pass
+			else:
+				#remove [] and create new lines between each date
+				tempString=""
+				for line in data.split("], ["):
+					tempString+=line
+					tempString+="\n"
+				i=0
+				for line in tempString.split("\n"):
+					if ((i!=0) and (i!=(len(tempString.split("\n"))-1))):
+						item=line.split(",")
+						#check whether price or volume
+						if (self.MAVar.currentText()=="Price"):
+							tempList.append(float(item[4].strip('\"\' ')))
+						if (self.MAVar.currentText()=="Volume"):
+							tempList.append(float(item[5].strip('\"\' ')))
+					i=i+1
+				outputList.append(tempList)	
+
+
+		print outputList
+		
+		
+		#oString=""
+		#for item in outputString.split("], ["):
+		#	oString+=item
+		#	oString+="\n"
+		#self.historicalData.setText(oString)
+		
+		
+		
+		
+
+
 			
 		#handle=SACudaLibrary()
 		#handle.CalculateMarketAverage(values)
