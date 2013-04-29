@@ -9,6 +9,7 @@ import sys
 import ystockquote
 import pyqtgraph as pg
 import numpy as np
+from SACudaLibrary import *
 
 def loadData(tickerSymbol):
 	price=ystockquote.get_price(tickerSymbol)
@@ -41,9 +42,9 @@ class MainWindow(QMainWindow):
 		
 		#Set the title and size of window
 		self.setWindowTitle("Stock Analyzer")
-		self.setGeometry(0,0,650,550)
+		self.setGeometry(0,0,850,550)
 		
-		##FILE MENU##
+		### FILE MENU ###
 		#create the action for opening a file
 		loadAction = QAction('Load',self)        
 		loadAction.setStatusTip('Load a file')
@@ -68,8 +69,8 @@ class MainWindow(QMainWindow):
 		fileMenu.addAction(loadAction)
 		fileMenu.addAction(saveActionCurrent)
 		fileMenu.addAction(saveActionHistorical)
-		############
-		
+
+		### TABS ###
 		#Create  a tab widget to manage GUI
 		self.tab_widget=QTabWidget()
 			
@@ -80,7 +81,6 @@ class MainWindow(QMainWindow):
 		self.lineEdit=QLineEdit(self)
 		self.textMatches=QLabel("Details:")
 		self.matches=QTextBrowser(self)
-		
 		#create tab
 		tab1=QWidget()		
 		layout1 = QVBoxLayout(tab1)
@@ -95,7 +95,6 @@ class MainWindow(QMainWindow):
 		#create componeonts of the tab
 		self.dataLabel=QLabel("Data to Analyze:")
 		self.dataToAnalyze=QTextBrowser(self)
-		
 		#create tab
 		self.tab2=QWidget()
 		layout2 = QVBoxLayout(self.tab2)
@@ -114,7 +113,6 @@ class MainWindow(QMainWindow):
 		self.historicalDataButton=QPushButton("Return Data", self)
 		self.historicalDataLabel = QLabel("Historical Data")
 		self.historicalData = QTextBrowser(self)
-
 		#create tab
 		tab3=QWidget()
 		layout3= QVBoxLayout(tab3)
@@ -127,21 +125,18 @@ class MainWindow(QMainWindow):
 		layout3.addWidget(self.historicalDataButton)
 		layout3.addWidget(self.historicalDataLabel)
 		layout3.addWidget(self.historicalData)
-		self.tab_widget.addTab(tab3, "Historical Data Pull")
-		
+		self.tab_widget.addTab(tab3, "Historical Data Pull")	
 
 		#tab4 =>historical graphs
 		#create components
 		self.graphLabel= QLabel("Historical Graph:")
-		self.graph=pg.PlotWidget()
-		
+		self.graph=pg.PlotWidget()	
 		#create tab
 		tab4=QWidget()
 		layout4= QVBoxLayout(tab4)
 		layout4.addWidget(self.graphLabel)
 		layout4.addWidget(self.graph)
 		self.tab_widget.addTab(tab4, "Historical Graph")
-		
 		
 		#tab5 => comparison
 		#create components
@@ -154,7 +149,7 @@ class MainWindow(QMainWindow):
 		self.compareFinishLabel = QLabel("Finish Date")
 		self.compareFinish = QCalendarWidget()
 		self.compareButton = QPushButton("Compare!", self)
-		
+		self.inverseAnalysisButton = QPushButton("Inverse Analysis", self)	
 		#create tab
 		tab5=QWidget()
 		layout5=QVBoxLayout(tab5)
@@ -167,20 +162,63 @@ class MainWindow(QMainWindow):
 		layout5.addWidget(self.compareFinishLabel)
 		layout5.addWidget(self.compareFinish)
 		layout5.addWidget(self.compareButton)
-
+		layout5.addWidget(self.inverseAnalysisButton)
 		self.tab_widget.addTab(tab5,"Comparison")
-		
 		
 		#tab6 => comparison graph
 		#create components
 		self.compareGraph=pg.PlotWidget()
-		
 		#create tab
 		tab6=QWidget()
 		layout6=QVBoxLayout(tab6)
 		layout6.addWidget(self.compareGraph)
 		self.tab_widget.addTab(tab6,"Comparison Graph")
+		
+		#tab7 => market average tab
+		#create components
+		fTickers=open('NYSE.ticker')
+		lines = fTickers.readlines()
+		self.MAStock=QTableWidget(len(lines),1)
+		i=0
+		for item in lines:
+			var=QTableWidgetItem(item.strip("\r\n"))
+			var.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+			self.MAStock.setItem(i,0,var)
+			i=i+1
 
+		self.MAVarLabel = QLabel ("Variable to Analyze:")
+		self.MAVar= QComboBox()
+		#add values to combo box
+		MAVariables = ("Price","Volume")
+		self.MAVar.addItems(MAVariables)
+		self.MAStartLabel = QLabel("Start Date")
+		self.MAStart = QCalendarWidget()
+		self.MAFinishLabel = QLabel("Finish Date")
+		self.MAFinish = QCalendarWidget()
+		self.MAButton = QPushButton("Market Average", self)
+		#create tab
+		tab7=QWidget()
+		layout7=QVBoxLayout(tab7)
+		layout7.addWidget(self.MAStock)
+		layout7.addWidget(self.MAVarLabel)
+		layout7.addWidget(self.MAVar)
+		layout7.addWidget(self.MAStartLabel)
+		layout7.addWidget(self.MAStart)
+		layout7.addWidget(self.MAFinishLabel)
+		layout7.addWidget(self.MAFinish)
+		layout7.addWidget(self.MAButton)
+		self.tab_widget.addTab(tab7,"Market Average")
+		
+		#tab8 => market average graph
+		#create components
+		self.MAGraph=pg.PlotWidget()
+		#create tab
+		tab8=QWidget()
+		layout8=QVBoxLayout(tab8)
+		layout8.addWidget(self.MAGraph)
+		self.tab_widget.addTab(tab8,"Market Average Graph")
+		
+		### LAYOUT ###
 		#set up layout of overall GUI
 		mainLayout=QVBoxLayout()
 		mainLayout.addWidget(self.tab_widget)
@@ -189,12 +227,13 @@ class MainWindow(QMainWindow):
 		widget.setLayout(mainLayout)
 		self.setCentralWidget(widget)
 	
-	
-
+		### CONNECTIONS ###
 		# Manage connections of buttons
 		self.connect(self.button,SIGNAL("clicked()"),self.buttonClick)
 		self.connect(self.historicalDataButton,SIGNAL("clicked()"),self.historicalDataButtonClick)
 		self.connect(self.compareButton,SIGNAL("clicked()"),self.compareButtonClick)
+		self.connect(self.inverseAnalysisButton,SIGNAL("clicked()"),self.inverseAnalysis)
+		self.connect(self.MAButton,SIGNAL("clicked()"),self.marketAverage)
 		# Manage calendar changes
 		self.connect(self.calStart, SIGNAL('selectionChanged()'), self.date_changed)
 		self.connect(self.calFinish, SIGNAL('selectionChanged()'), self.date_changed)
@@ -390,6 +429,16 @@ class MainWindow(QMainWindow):
 			i=i+1
 		
 		self.compareGraph.plot(y,pen='g',symbol='o')
+	
+	def inverseAnalysis(self):
+		pass
+		
+	def marketAverage(self):
+		for item in self.MAStock.selectedItems():
+			print item.text()
+			
+		#handle=SACudaLibrary()
+		#handle.CalculateMarketAverage(values)
 		
 	def date_changed(self):
 		# Indicate to the user that the date has changed
@@ -400,3 +449,4 @@ app=QApplication(sys.argv)
 window=MainWindow()
 window.show()
 app.exec_()
+
