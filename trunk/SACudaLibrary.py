@@ -78,7 +78,7 @@ class SACudaLibrary(object):
 		# Initialize cstruct
 		numentries = len(data)
 		numtimesteps = len(data[0])
-		values = (c_double * numentries * numtimesteps)(*[c_double(element) for item in data for element in item])
+		values = (c_double * (numentries * numtimesteps))(*[c_double(element) for item in data for element in item])
 		
 		# Check data validity
 		for item in data:
