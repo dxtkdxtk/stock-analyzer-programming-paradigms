@@ -502,20 +502,7 @@ class MainWindow(QMainWindow):
 
 
 		print outputList
-		
-		
-		#oString=""
-		#for item in outputString.split("], ["):
-		#	oString+=item
-		#	oString+="\n"
-		#self.historicalData.setText(oString)
-		
-		
-		
-		
 
-
-			
 		#handle=SACudaLibrary()
 		#handle.CalculateMarketAverage(values)
 		
