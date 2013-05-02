@@ -361,6 +361,7 @@ class MainWindow(QMainWindow):
 				self.graph.plot(y,pen='b',symbol='+')
 		else:
 				self.graph.plot(y,pen='b')
+
 				
 	def compareButtonClick(self):
 		#convery the inputs to text
@@ -504,10 +505,23 @@ class MainWindow(QMainWindow):
 		
 		#graph the return data
 		self.inverseGraph.clear()
-		if (len(dataReturn)<15):
-				self.inverseGraph.plot(dataReturn,pen='b',symbol='x')
-		else:
-				self.inverseGraph.plot(dataReturn,pen='b')			
+		
+		#create list of prices for each stock
+		stockOneList=[]
+		stockTwoList=[]
+		for line in dataList:
+			stockOneList.append(line[0])
+			stockTwoList.append(line[1])
+		
+		#plot stocks
+		self.inverseGraph.plot(stockOneList,pen='b',symbol='x')
+		self.inverseGraph.plot(stockTwoList,pen='g',symbol='o')
+		
+		#plot markers based on CUDA call
+		for item in dataReturn:
+			avg = (stockOneList[item]+stockTwoList[item])/2
+			self.graph.plot([item-1,item,item+1],[avg,avg,avg],pen='r',symbol="o")
+		#SHOULD prob change symbol to dif symbol than stocks.. forget what the others are
 
 	def marketAnalysis(self):
 		#pull dates from calendar	
@@ -578,13 +592,16 @@ class MainWindow(QMainWindow):
 		dataString = str(dataString)
 		#convert to list of lists
 		dataList=[]
+		checkLength=len(dataString.split("\n")[0])
 		for line in dataString.split("\n"):
-				tempList=[]
-				for item in line.strip("\n ").split(","):
-					tempList.append(float(item))
-					#map(float,tempList)
-				dataList.append(tempList)
-		
+				#make sure all stocks have existed for the same amount of time
+				if (len(line)==checkLenth):
+					tempList=[]
+					for item in line.strip("\n ").split(","):
+						tempList.append(float(item))
+						#map(float,tempList)
+					dataList.append(tempList)
+			
 		#pass to CUDA
 		handle = SACudaProxy.SACudaProxy()
 		dataReturn = handle.CalculateMarketAverage(dataList)
