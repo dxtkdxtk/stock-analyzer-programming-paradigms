@@ -16,7 +16,7 @@ class DoubleArray(Structure):
 		("values", POINTER(c_double))
 	]
 
-class SACudaLibrary(object):
+class SACudaProxy(object):
 # Proxies between Python and library
 	def __init__(self):
 		# Load library
