@@ -483,7 +483,7 @@ class MainWindow(QMainWindow):
 					dataString+=str(data)
 				i=i+1
 			j=j+1
-			if (j!=len(outputLis)):
+			if (j!=len(outputList)):
 				dataString+="\n"
 
 
