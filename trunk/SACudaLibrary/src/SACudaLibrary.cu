@@ -1,4 +1,4 @@
-#include <cuda_runtime.h>
+//#include <cuda_runtime.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -7,7 +7,15 @@
 
 extern "C" IntArray FindInverseTrends(double * h_data, int length)
 {
-	// CUDA SECTION
+	IntArray returnvalue;
+
+	if(length == 0)
+	{
+		returnvalue.length = 0;
+		return returnvalue;
+	}
+
+	//*************************** CUDA ***************************
 	double * d_data;
 
 	REQUIRE_SUCCESS(cudaMalloc((void **)&d_data, sizeof(double) * length));
@@ -16,10 +24,9 @@ extern "C" IntArray FindInverseTrends(double * h_data, int length)
 	FindInverseTrendsKernel<<<1,1>>>(d_data, length);
 
 	cudaFree((void *)d_data);
+	//************************* END CUDA *************************
 
-	// LIBRARY SECTION
-	IntArray returnvalue;
-
+	
 	returnvalue.length = 0;
 
 	return returnvalue;
@@ -27,23 +34,35 @@ extern "C" IntArray FindInverseTrends(double * h_data, int length)
 
 extern "C" DoubleArray CalculateMarketAverage(double * h_data, int entries, int timesteps)
 {
-	// CUDA SECTION
+	DoubleArray returnvalue;
+	
+	if(entries == 0 || timesteps == 0)
+	{
+		returnvalue.length = 0;
+		return returnvalue;
+	}
+
+	//*************************** CUDA ***************************
 	double * d_data;
 
 	REQUIRE_SUCCESS(cudaMalloc((void **)&d_data, sizeof(double) * entries * timesteps));
 	REQUIRE_SUCCESS(cudaMemcpy((void *)d_data, (void *)h_data, sizeof(double) * entries * timesteps, cudaMemcpyHostToDevice));
 
-	CalculateMarketAverageKernel<<<(timesteps-1)/512 + 1,512>>>(d_data, entries, timesteps);
+	for(int i = entries; i > 1; i = ((i-1)/2)+1)
+	{
+		printf("%d %d %d %d\n", i, ((entries/2 + entries%2)-1)/32 + 1, ((timesteps-1)/32 + 1), timesteps);
+		CalculateMarketAverageKernel<<<dim3(((entries/2 + entries%2)-1)/32 + 1, (timesteps-1/32 + 1)), dim3(32, 32)>>>(d_data, entries, timesteps);
+		cudaDeviceSynchronize();
+	}
 	
 	REQUIRE_SUCCESS(cudaMemcpy((void *)h_data, (void *)d_data, sizeof(double) * timesteps, cudaMemcpyDeviceToHost));
 
 	cudaFree((void *)d_data);
-
-	// DEVICE SECTION
-	DoubleArray returnvalue;
-
+	//************************* END CUDA *************************
+	
 	returnvalue.values = h_data;
-	returnvalue.length = timesteps;
+	//returnvalue.length = timesteps;
+	returnvalue.length = timesteps * entries;
 
 	return returnvalue;
 }
