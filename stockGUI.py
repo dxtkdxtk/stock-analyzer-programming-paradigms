@@ -464,6 +464,7 @@ class MainWindow(QMainWindow):
 		for line in dataString.split("\n"):
 				tempList=[]
 				for item in line.split(","):
+					print item	
 					tempList.append(float(item))
 				dataList.append(tempList)
 		#load from field, parse into list of lists, pass to cuda, graph values returned
