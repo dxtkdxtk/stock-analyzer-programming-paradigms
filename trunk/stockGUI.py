@@ -597,9 +597,6 @@ class MainWindow(QMainWindow):
 					#map(float,tempList)
 				dataList.append(tempList)
 		#load from field, parse into list of lists, pass to cuda, graph values returned
-		print "\n"
-		print dataList
-		#outputList= [  [1, 2, 3],  [2, 3, 4]   ]
 
 		handle = SACudaProxy.SACudaProxy()
 		dataReturn = handle.CalculateMarketAverage(dataList)
@@ -608,7 +605,7 @@ class MainWindow(QMainWindow):
 		if (len(dataReturn)<15):
 				self.MAGraph.plot(dataReturn,pen='b',symbol='x')
 		else:
-				self.compareGraph.plot(dataReturn,pen='b')		
+				self.MAGraph.plot(dataReturn,pen='b')		
 	
 	
 	def date_changed(self):
