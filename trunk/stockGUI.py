@@ -11,6 +11,9 @@ import pyqtgraph as pg
 import numpy as np
 import SACudaProxy
 
+
+
+##Helper Functions
 def loadData(tickerSymbol):
 	price=ystockquote.get_price(tickerSymbol)
 	volume=ystockquote.get_volume(tickerSymbol)
@@ -57,7 +60,7 @@ class MainWindow(QMainWindow):
 		
 		#Set the title and size of window
 		self.setWindowTitle("Stock Analyzer")
-		self.setGeometry(0,0,900,675)
+		self.setGeometry(0,0,1000,675)
 		
 		### FILE MENU ###
 		#create the action for opening a file
@@ -91,7 +94,7 @@ class MainWindow(QMainWindow):
 			
 		#tab1 => Loading live data.
 		#create all components of the tab
-		self.button=QPushButton("Return Data:",self)
+		self.currentButton=QPushButton("Return Data:",self)
 		self.textInfo=QLabel("Stock Ticker Symbol:")
 		self.lineEdit=QLineEdit(self)
 		self.textMatches=QLabel("Details:")
@@ -101,7 +104,7 @@ class MainWindow(QMainWindow):
 		layout1 = QVBoxLayout(tab1)
 		layout1.addWidget(self.textInfo)
 		layout1.addWidget(self.lineEdit)
-		layout1.addWidget(self.button)
+		layout1.addWidget(self.currentButton)
 		layout1.addWidget(self.textMatches)
 		layout1.addWidget(self.matches)
 		self.tab_widget.addTab(tab1, "Pull Live Data")
@@ -176,9 +179,7 @@ class MainWindow(QMainWindow):
 		tab6=QWidget()
 		layout6=QVBoxLayout(tab6)
 		layout6.addWidget(self.compareGraph)
-		self.tab_widget.addTab(tab6,"Comparison Graph")
-		
-		
+		self.tab_widget.addTab(tab6,"Comparison Graph")		
 		
 		#tap9 => inverse analsis graph
 		#out of order but alot of work to rename #s
@@ -201,7 +202,6 @@ class MainWindow(QMainWindow):
 			var.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
 			self.MAStock.setItem(i,0,var)
 			i=i+1
-
 		self.MAVarLabel = QLabel ("Variable to Analyze:")
 		self.MAVar= QComboBox()
 		#add values to combo box
@@ -233,7 +233,6 @@ class MainWindow(QMainWindow):
 		layout8=QVBoxLayout(tab8)
 		layout8.addWidget(self.MAGraph)
 		self.tab_widget.addTab(tab8,"Market Average Graph")
-		
 
 		#tab2 => Running analysis on data.
 		#create componeonts of the tab
@@ -261,7 +260,7 @@ class MainWindow(QMainWindow):
 	
 		### CONNECTIONS ###
 		# Manage connections of buttons
-		self.connect(self.button,SIGNAL("clicked()"),self.buttonClick)
+		self.connect(self.currentButton,SIGNAL("clicked()"),self.currentButtonClick)
 		self.connect(self.historicalDataButton,SIGNAL("clicked()"),self.historicalDataButtonClick)
 		self.connect(self.compareButton,SIGNAL("clicked()"),self.compareButtonClick)
 		self.connect(self.inverseAnalysisCUDAButton,SIGNAL("clicked()"),self.inverseAnalysisCUDA)
@@ -271,6 +270,9 @@ class MainWindow(QMainWindow):
 		# Manage calendar changes
 		self.connect(self.calStart, SIGNAL('selectionChanged()'), self.date_changed)
 		self.connect(self.calFinish, SIGNAL('selectionChanged()'), self.date_changed)
+
+
+	##GUI FUNCTIONS##
 		
 	#function to manage opening files	
 	def fileLoad(self):
@@ -284,16 +286,16 @@ class MainWindow(QMainWindow):
 				data = f.read()
 				self.dataToAnalyze.setText(data)
 			#change the focus to the second tab
-			#tab2.show()
 			self.tab_widget.setCurrentWidget (self.tab2)
-			#tab2.raise_()
-			
+
+	#save current Data		
 	def fileSaveCurrent(self):
 		FilePath = QFileDialog.getSaveFileName()
 		if(FilePath):
 			f=open(FilePath,'w')
 			f.write(str(self.matches.toPlainText()))
 	
+	#save historical Data
 	def fileSaveHistorical(self):
 		FilePath = QFileDialog.getSaveFileName()
 		if(FilePath):
@@ -301,7 +303,7 @@ class MainWindow(QMainWindow):
 			f.write(str(self.historicalData.toPlainText()))
 	
 	#function to manage the button click parse functionality
-	def buttonClick(self):
+	def currentButtonClick(self):
 		#convert the inputs to text
 		tickerSymbol = unicode(self.lineEdit.text())
 		
@@ -342,9 +344,7 @@ class MainWindow(QMainWindow):
 	
 		#check to make sure ticker value given
 		if (tickerSymbol == ''):
-			self.historicalData.setText("No ticker symbol given!")
-		
-		
+			self.historicalData.setText("No ticker symbol given!")	
 		#update graph
 		x=[]
 		y=[]
@@ -398,7 +398,7 @@ class MainWindow(QMainWindow):
 		else:
 				self.compareGraph.plot(y,pen='b')		
 		
-		#graoh second output
+		#graph second output
 		outputString = loadHistoricalData(tickerSymbolTwo, dateStartString, dateFinishString)
 		oString=""
 		for item in outputString.split("], ["):
@@ -434,15 +434,15 @@ class MainWindow(QMainWindow):
 		dateStartString=convertDate(dateStart)
 		dateFinishString=convertDate(dateFinish)
 		
-		#graph first output
+		#load data
 		outputString1 = loadHistoricalData(tickerSymbolOne, dateStartString, dateFinishString)
 		outputString2 = loadHistoricalData(tickerSymbolTwo, dateStartString, dateFinishString)
 		
+		#parse first stock data to make a list of prices
 		oString1=""		
 		for item in outputString1.split("], ["):
 			oString1+=item
 			oString1+="\n"		
-		
 		i=0
 		price1=[]
 		for line in oString1.split("\n"):
@@ -451,13 +451,11 @@ class MainWindow(QMainWindow):
 				price1.append(float(item[4].strip('\"\' ')))
 			i=i+1
 				
-		
+		#parse second stock data to make a list of prices
 		oString2=""		
 		for item in outputString2.split("], ["):
 			oString2+=item
 			oString2+="\n"				
-		
-		
 		i=0
 		price2=[]
 		for line in oString2.split("\n"):
@@ -466,6 +464,7 @@ class MainWindow(QMainWindow):
 				price2.append(float(item[4].strip('\"\' ')))
 			i=i+1
 			
+		#create a string with prices for each date side by side
 		finalString=""
 		i=0
 		for item in price1:
@@ -478,14 +477,7 @@ class MainWindow(QMainWindow):
 						finalString+="\n"
 				i=i+1
 				
-				
-		print "String 1\n"
-		print outputString1
-		print "String 2\n"
-		print outputString2
-		print "Final String\n"
-		print finalString
-		
+		#open a file for user to save data
 		FilePath = QFileDialog.getSaveFileName()
 		if(FilePath):
 			f=open(FilePath,'w')
@@ -494,34 +486,30 @@ class MainWindow(QMainWindow):
 
 
 	def inverseAnalysisCUDA(self):		
+		#pull data from text field
 		dataString = self.dataToAnalyze.toPlainText()
 		dataString = str(dataString)
+		#parse into list of lists
 		dataList=[]
-		#i=0
-		#length=dataString.split("\n")
 		for line in dataString.split("\n"):
 				tempList=[]
 				for item in line.strip("\n ").split(","):
-					print item	
 					tempList.append(float(item))
 					#map(float,tempList)
 				dataList.append(tempList)
-		#load from field, parse into list of lists, pass to cuda, graph values returned
-		print "\n"
-		print dataList
-		#outputList= [  [1, 2, 3],  [2, 3, 4]   ]
 
+		#pass to CUDA
 		handle = SACudaProxy.SACudaProxy()
 		dataReturn = handle.FindInverseTrends(dataList)
 		
-		self.MAGraph.clear()
+		#graph the return data
+		self.inverseGraph.clear()
 		if (len(dataReturn)<15):
-				self.MAGraph.plot(dataReturn,pen='b',symbol='x')
+				self.inverseGraph.plot(dataReturn,pen='b',symbol='x')
 		else:
-				self.compareGraph.plot(dataReturn,pen='b')			
+				self.inverseGraph.plot(dataReturn,pen='b')			
 
 	def marketAnalysis(self):
-		#get dates
 		#pull dates from calendar	
 		dateStart = self.MAStart.selectedDate()
 		dateFinish = self.MAFinish.selectedDate()	
@@ -534,7 +522,7 @@ class MainWindow(QMainWindow):
 		for stock in self.MAStock.selectedItems():
 			stockList.append(str(stock.text()))
 		
-		#create the string of data to pass to CUDA based on stocks and dates
+		#create the list of lists to pass to CUDA
 		outputList=[]
 		for stock in stockList:
 			#load data for each ticker
@@ -560,7 +548,8 @@ class MainWindow(QMainWindow):
 							tempList.append(float(item[5].strip('\"\' ')))
 					i=i+1
 				outputList.append(tempList)	
-
+		
+		#convert to a string
 		dataString=""
 		j=0
 		for item in outputList:
@@ -576,7 +565,7 @@ class MainWindow(QMainWindow):
 			if (j!=len(outputList)):
 				dataString+="\n"
 
-
+		#open option to save string in file
 		FilePath = QFileDialog.getSaveFileName()
 		if(FilePath):
 			f=open(FilePath,'w')
@@ -584,23 +573,23 @@ class MainWindow(QMainWindow):
 			
 
 	def marketAnalysisCUDA(self):		
+		#pull data from field
 		dataString = self.dataToAnalyze.toPlainText()
 		dataString = str(dataString)
+		#convert to list of lists
 		dataList=[]
-		#i=0
-		#length=dataString.split("\n")
 		for line in dataString.split("\n"):
 				tempList=[]
 				for item in line.strip("\n ").split(","):
-					print item	
 					tempList.append(float(item))
 					#map(float,tempList)
 				dataList.append(tempList)
-		#load from field, parse into list of lists, pass to cuda, graph values returned
-
+		
+		#pass to CUDA
 		handle = SACudaProxy.SACudaProxy()
 		dataReturn = handle.CalculateMarketAverage(dataList)
 		
+		#graph results
 		self.MAGraph.clear()
 		if (len(dataReturn)<15):
 				self.MAGraph.plot(dataReturn,pen='b',symbol='x')
