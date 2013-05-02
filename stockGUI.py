@@ -32,6 +32,21 @@ def loadData(tickerSymbol):
 	outputString+="Short Ratio: %s\n" % shortRatio
 	return outputString
 
+def convertDate(dateValue):
+		dateString = dateValue.toPyDate()
+		yearString=str(dateString.year)
+		if (dateString.month < 10):
+			monthString="0"+str(dateString.month)
+		else:
+			monthString=str(dateString.month)
+		if (dateString.day < 10):
+			dayString="0"+str(dateString.day)
+		else:
+			dayString=str(dateString.day)
+			
+		dateStringFinal=yearString+monthString+dayString
+		return dateStringFinal
+
 def loadHistoricalData (tickerSymbol, dateStart, dateFinish):
 	outputString = ystockquote.get_historical_prices(tickerSymbol, dateStart, dateFinish)
 	return str(outputString).strip('[]')
@@ -129,9 +144,9 @@ class MainWindow(QMainWindow):
 		
 		#tab5 => comparison
 		#create components
-		self.tickerOneLabel = QLabel("Stock Ticker (\"o\"):")
+		self.tickerOneLabel = QLabel("Stock Ticker (\"blue +\"):")
 		self.tickerOne = QLineEdit(self)
-		self.tickerTwoLabel = QLabel("Stock Ticker (\"+\"):")
+		self.tickerTwoLabel = QLabel("Stock Ticker (\"green o\"):")
 		self.tickerTwo = QLineEdit(self)
 		self.compareStartLabel = QLabel("Start Date")
 		self.compareStart = QCalendarWidget()
@@ -309,35 +324,9 @@ class MainWindow(QMainWindow):
 		#pull dates from calendar	
 		dateStart = self.calStart.selectedDate()
 		dateFinish = self.calFinish.selectedDate()
-		
 		#convert dates to correct format for ystockquote
-		#start date
-		dateS = dateStart.toPyDate()
-		sYearString=str(dateS.year)
-		if (dateS.month < 10):
-			sMonthString="0"+str(dateS.month)
-		else:
-			sMonthString=str(dateS.month)
-		if (dateS.day < 10):
-			sDayString="0"+str(dateS.day)
-		else:
-			sDayString=str(dateS.day)
-			
-		dateStartString=sYearString+sMonthString+sDayString
-		
-		#finish date
-		dateF = dateFinish.toPyDate()
-		fYearString=str(dateF.year)
-		if (dateF.month < 10):
-			fMonthString="0"+str(dateF.month)
-		else:
-			fMonthString=str(dateF.month)
-		if (dateF.day < 10):
-			fDayString="0"+str(dateF.day)
-		else:
-			fDayString=str(dateF.day)
-			
-		dateFinishString=fYearString+fMonthString+fDayString
+		dateStartString=convertDate(dateStart)
+		dateFinishString=convertDate(dateFinish)
 		
 		#set output
 		outputString = loadHistoricalData(tickerSymbol, dateStartString, dateFinishString)
@@ -367,8 +356,12 @@ class MainWindow(QMainWindow):
 				y.append(float(item[4].strip('\"\' ')))
 			i=i+1
 		self.graph.clear()
-		self.graph.plot(y,pen='b',symbol='+')
-		
+		#only display symbols is length is less than a certain value
+		if (len(y)<15):
+				self.graph.plot(y,pen='b',symbol='+')
+		else:
+				self.graph.plot(y,pen='b')
+				
 	def compareButtonClick(self):
 		#convery the inputs to text
 		tickerSymbolOne = unicode(self.tickerOne.text())
@@ -376,36 +369,10 @@ class MainWindow(QMainWindow):
 	
 		#pull dates from calendar	
 		dateStart = self.compareStart.selectedDate()
-		dateFinish = self.compareFinish.selectedDate()
-		
+		dateFinish = self.compareFinish.selectedDate()	
 		#convert dates to correct format for ystockquote
-		#start date
-		dateS = dateStart.toPyDate()
-		sYearString=str(dateS.year)
-		if (dateS.month < 10):
-			sMonthString="0"+str(dateS.month)
-		else:
-			sMonthString=str(dateS.month)
-		if (dateS.day < 10):
-			sDayString="0"+str(dateS.day)
-		else:
-			sDayString=str(dateS.day)
-			
-		dateStartString=sYearString+sMonthString+sDayString
-		
-		#finish date
-		dateF = dateFinish.toPyDate()
-		fYearString=str(dateF.year)
-		if (dateF.month < 10):
-			fMonthString="0"+str(dateF.month)
-		else:
-			fMonthString=str(dateF.month)
-		if (dateF.day < 10):
-			fDayString="0"+str(dateF.day)
-		else:
-			fDayString=str(dateF.day)
-			
-		dateFinishString=fYearString+fMonthString+fDayString
+		dateStartString=convertDate(dateStart)
+		dateFinishString=convertDate(dateFinish)
 		
 		#graph first output
 		outputString = loadHistoricalData(tickerSymbolOne, dateStartString, dateFinishString)
@@ -426,8 +393,10 @@ class MainWindow(QMainWindow):
 			i=i+1
 		
 		self.compareGraph.clear()
-		self.compareGraph.plot(y,pen='b',symbol='+')
-		
+		if (len(y)<15):
+				self.compareGraph.plot(y,pen='b',symbol='+')
+		else:
+				self.compareGraph.plot(y,pen='b')		
 		
 		#graoh second output
 		outputString = loadHistoricalData(tickerSymbolTwo, dateStartString, dateFinishString)
@@ -447,74 +416,29 @@ class MainWindow(QMainWindow):
 				y.append(float(item[4].strip('\"\' ')))
 			i=i+1
 		
-		self.compareGraph.plot(y,pen='g',symbol='o')
-	
-	def inverseAnalysisCUDA(self):		
-		pass
-		#load from field, parse into list of lists, pass to cuda, graph values returned
+		if (len(y)<15):
+				self.compareGraph.plot(y,pen='g',symbol='o')
+		else:
+				self.compareGraph.plot(y,pen='g')				
+
 
 	def inverseAnalysis(self):
 		pass
 
 
-	def marketAnalysisCUDA(self):		
-		dataString = self.dataToAnalyze.toPlainText()
-		dataString = str(dataString)
-		dataList=[]
-		#i=0
-		#length=dataString.split("\n")
-		for line in dataString.split("\n"):
-				tempList=[]
-				for item in line.strip("\n ").split(","):
-					print item	
-					tempList.append(float(item))
-					#map(float,tempList)
-				dataList.append(tempList)
-		#load from field, parse into list of lists, pass to cuda, graph values returned
-		print "\n"
-		print dataList
-		#outputList= [  [1, 2, 3],  [2, 3, 4]   ]
-
-		handle = SACudaProxy.SACudaProxy()
-		test = handle.CalculateMarketAverage(dataList)
-		print test
-		
+	def inverseAnalysisCUDA(self):		
+		pass
+		#load from field, parse into list of lists, pass to cuda, graph values returned		
 
 	def marketAnalysis(self):
 		#get dates
 		#pull dates from calendar	
 		dateStart = self.MAStart.selectedDate()
-		dateFinish = self.MAFinish.selectedDate()
-		
+		dateFinish = self.MAFinish.selectedDate()	
 		#convert dates to correct format for ystockquote
-		#start date
-		dateS = dateStart.toPyDate()
-		sYearString=str(dateS.year)
-		if (dateS.month < 10):
-			sMonthString="0"+str(dateS.month)
-		else:
-			sMonthString=str(dateS.month)
-		if (dateS.day < 10):
-			sDayString="0"+str(dateS.day)
-		else:
-			sDayString=str(dateS.day)
-			
-		dateStartString=sYearString+sMonthString+sDayString
-		
-		#finish date
-		dateF = dateFinish.toPyDate()
-		fYearString=str(dateF.year)
-		if (dateF.month < 10):
-			fMonthString="0"+str(dateF.month)
-		else:
-			fMonthString=str(dateF.month)
-		if (dateF.day < 10):
-			fDayString="0"+str(dateF.day)
-		else:
-			fDayString=str(dateF.day)
-			
-		dateFinishString=fYearString+fMonthString+fDayString
-		
+		dateStartString=convertDate(dateStart)
+		dateFinishString=convertDate(dateFinish)
+
 		#convert the selected stocks into a list of text stocks
 		stockList=[]
 		for stock in self.MAStock.selectedItems():
@@ -569,6 +493,27 @@ class MainWindow(QMainWindow):
 			f.write(dataString)
 			
 
+	def marketAnalysisCUDA(self):		
+		dataString = self.dataToAnalyze.toPlainText()
+		dataString = str(dataString)
+		dataList=[]
+		#i=0
+		#length=dataString.split("\n")
+		for line in dataString.split("\n"):
+				tempList=[]
+				for item in line.strip("\n ").split(","):
+					print item	
+					tempList.append(float(item))
+					#map(float,tempList)
+				dataList.append(tempList)
+		#load from field, parse into list of lists, pass to cuda, graph values returned
+		print "\n"
+		print dataList
+		#outputList= [  [1, 2, 3],  [2, 3, 4]   ]
+
+		handle = SACudaProxy.SACudaProxy()
+		test = handle.CalculateMarketAverage(dataList)
+		print test
 
 	
 	def date_changed(self):
