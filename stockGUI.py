@@ -593,20 +593,20 @@ class MainWindow(QMainWindow):
 		#convert to list of lists
 		dataList=[]
 
-		#checkLength=dataString.split("\n")[0].strip("\n ").split(",")
+		checkLength=len(dataString.split("\n")[0].strip("\n ").split(","))
 
 		#print "Check length is: ",checkLength
 		for line in dataString.split("\n"):
 				#make sure all stocks have existed for the same amount of time
 				#print "Length of line is: ",len(line)
 				tempList=[]
-				#if (checkLength==line.strip("\n ").split(",")):
-				#print "CHECK!"
-				for item in line.strip("\n ").split(","):
-					tempList.append(float(item))
-					#map(float,tempList)
-				dataList.append(tempList)
-			
+				if (checkLength==line.strip("\n ").split(",")):
+				print "CHECK!"
+					for item in line.strip("\n ").split(","):
+						tempList.append(float(item))
+						#map(float,tempList)
+					dataList.append(tempList)
+				
 		#pass to CUDA
 		handle = SACudaProxy.SACudaProxy()
 		dataReturn = handle.CalculateMarketAverage(dataList)
