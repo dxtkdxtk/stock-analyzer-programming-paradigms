@@ -9,7 +9,7 @@ import sys
 import ystockquote
 import pyqtgraph as pg
 import numpy as np
-from SACudaLibrary import *
+import SACudaProxy
 
 def loadData(tickerSymbol):
 	price=ystockquote.get_price(tickerSymbol)
@@ -42,7 +42,7 @@ class MainWindow(QMainWindow):
 		
 		#Set the title and size of window
 		self.setWindowTitle("Stock Analyzer")
-		self.setGeometry(0,0,850,550)
+		self.setGeometry(0,0,900,675)
 		
 		### FILE MENU ###
 		#create the action for opening a file
@@ -90,18 +90,7 @@ class MainWindow(QMainWindow):
 		layout1.addWidget(self.textMatches)
 		layout1.addWidget(self.matches)
 		self.tab_widget.addTab(tab1, "Pull Live Data")
-		
-		#tab2 => Running analysis on data.
-		#create componeonts of the tab
-		self.dataLabel=QLabel("Data to Analyze:")
-		self.dataToAnalyze=QTextBrowser(self)
-		#create tab
-		self.tab2=QWidget()
-		layout2 = QVBoxLayout(self.tab2)
-		layout2.addWidget(self.dataLabel)
-		layout2.addWidget(self.dataToAnalyze)
-		self.tab_widget.addTab(self.tab2, "Run Analysis")
-		
+				
 		#tab3=> Pull historical data
 		#create components
 		self.stockTickerLabel = QLabel("Stock Ticker Label")
@@ -149,7 +138,7 @@ class MainWindow(QMainWindow):
 		self.compareFinishLabel = QLabel("Finish Date")
 		self.compareFinish = QCalendarWidget()
 		self.compareButton = QPushButton("Compare!", self)
-		self.inverseAnalysisButton = QPushButton("Inverse Analysis", self)	
+		self.saveCompareButton = QPushButton("Save!", self)	
 		#create tab
 		tab5=QWidget()
 		layout5=QVBoxLayout(tab5)
@@ -162,7 +151,7 @@ class MainWindow(QMainWindow):
 		layout5.addWidget(self.compareFinishLabel)
 		layout5.addWidget(self.compareFinish)
 		layout5.addWidget(self.compareButton)
-		layout5.addWidget(self.inverseAnalysisButton)
+		layout5.addWidget(self.saveCompareButton)
 		self.tab_widget.addTab(tab5,"Comparison")
 		
 		#tab6 => comparison graph
@@ -173,6 +162,18 @@ class MainWindow(QMainWindow):
 		layout6=QVBoxLayout(tab6)
 		layout6.addWidget(self.compareGraph)
 		self.tab_widget.addTab(tab6,"Comparison Graph")
+		
+		
+		
+		#tap9 => inverse analsis graph
+		#out of order but alot of work to rename #s
+		#create components
+		self.inverseGraph=pg.PlotWidget()
+		#create tab
+		tab9=QWidget()
+		layout9=QVBoxLayout(tab9)
+		layout9.addWidget(self.inverseGraph)
+		self.tab_widget.addTab(tab9,"Inverse Analysis Graph")		
 		
 		#tab7 => market average tab
 		#create components
@@ -218,6 +219,22 @@ class MainWindow(QMainWindow):
 		layout8.addWidget(self.MAGraph)
 		self.tab_widget.addTab(tab8,"Market Average Graph")
 		
+
+		#tab2 => Running analysis on data.
+		#create componeonts of the tab
+		self.dataLabel=QLabel("Loaded Data View:")
+		self.dataToAnalyze=QTextBrowser(self)
+		self.inverseAnalysisCUDAButton = QPushButton("CUDA - Inverse Analysis", self)
+		self.marketAnalysisCUDAButton = QPushButton("CUDA - Market Analysis", self)
+		#create tab
+		self.tab2=QWidget()
+		layout2 = QVBoxLayout(self.tab2)
+		layout2.addWidget(self.dataLabel)
+		layout2.addWidget(self.dataToAnalyze)
+		layout2.addWidget(self.inverseAnalysisCUDAButton)
+		layout2.addWidget(self.marketAnalysisCUDAButton)
+		self.tab_widget.addTab(self.tab2, "Loaded Data")
+		
 		### LAYOUT ###
 		#set up layout of overall GUI
 		mainLayout=QVBoxLayout()
@@ -232,8 +249,10 @@ class MainWindow(QMainWindow):
 		self.connect(self.button,SIGNAL("clicked()"),self.buttonClick)
 		self.connect(self.historicalDataButton,SIGNAL("clicked()"),self.historicalDataButtonClick)
 		self.connect(self.compareButton,SIGNAL("clicked()"),self.compareButtonClick)
-		self.connect(self.inverseAnalysisButton,SIGNAL("clicked()"),self.inverseAnalysis)
-		self.connect(self.MAButton,SIGNAL("clicked()"),self.marketAverage)
+		self.connect(self.inverseAnalysisCUDAButton,SIGNAL("clicked()"),self.inverseAnalysisCUDA)
+		self.connect(self.MAButton,SIGNAL("clicked()"),self.marketAnalysis)
+		self.connect(self.marketAnalysisCUDAButton,SIGNAL("clicked()"),self.marketAnalysisCUDA)
+		self.connect(self.saveCompareButton,SIGNAL("clicked()"),self.inverseAnalysis)
 		# Manage calendar changes
 		self.connect(self.calStart, SIGNAL('selectionChanged()'), self.date_changed)
 		self.connect(self.calFinish, SIGNAL('selectionChanged()'), self.date_changed)
@@ -430,10 +449,26 @@ class MainWindow(QMainWindow):
 		
 		self.compareGraph.plot(y,pen='g',symbol='o')
 	
+	def inverseAnalysisCUDA(self):		
+		pass
+		#load from field, parse into list of lists, pass to cuda, graph values returned
+
 	def inverseAnalysis(self):
 		pass
+
+
+	def marketAnalysisCUDA(self):		
+		pass
+		#load from field, parse into list of lists, pass to cuda, graph values returned
 		
-	def marketAverage(self):
+		
+		#outputList= [  [1, 2, 3],  [2, 3, 4]   ]
+
+		handle = SACudaProxy.SACudaProxy()
+		test = handle.CalculateMarketAverage(outputList)
+		
+
+	def marketAnalysis(self):
 		#get dates
 		#pull dates from calendar	
 		dateStart = self.MAStart.selectedDate()
@@ -500,15 +535,33 @@ class MainWindow(QMainWindow):
 					i=i+1
 				outputList.append(tempList)	
 
+			dataString=""
+			for item in outputList:
+				i=0
+				for data in item:
+					if (i!=len(item)):
+						dataString+=dat,","
+					else:
+						dataString+=dat
+					i=i+1
+				dataString+="\n"
+				
+			self.dataToAnalyze.setText(dataString)
 
-		print outputList
+			#FilePath = QFileDialog.getSaveFileName()
+			#if(FilePath):
+			#	f=open(FilePath,'w')
+			#	f.write(str(self.dataToAnalyze.toPlainText()))
+			#
 
-		#handle=SACudaLibrary()
-		#handle.CalculateMarketAverage(values)
-		
+
+	
 	def date_changed(self):
 		# Indicate to the user that the date has changed
 		self.historicalData.setText("The date has changed! Press button to refresh")
+
+
+		
 		
 #set up and begin the application
 app=QApplication(sys.argv)
