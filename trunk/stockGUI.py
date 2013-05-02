@@ -464,7 +464,7 @@ class MainWindow(QMainWindow):
 		for line in dataString.split("\n"):
 				tempList=[]
 				for item in line.split(","):
-					tempList.append(item)
+					tempList.append(float(item))
 				dataList.append(tempList)
 		#load from field, parse into list of lists, pass to cuda, graph values returned
 		
@@ -473,6 +473,7 @@ class MainWindow(QMainWindow):
 
 		handle = SACudaProxy.SACudaProxy()
 		test = handle.CalculateMarketAverage(dataList)
+		print test
 		
 
 	def marketAnalysis(self):
