@@ -5,19 +5,17 @@ __global__ void FindInverseTrendsKernel(double * data, int length)
 	
 }
 
+#define GETDATA(e, t) ((e<entries)?(e*timesteps + t):0)
+
 __global__ void CalculateMarketAverageKernel(double * data, int entries, int timesteps)
 {
-	int ordinal = threadIdx.x + blockIdx.x*blockDim.x - 1;
-	double sum = 0;
+	int entryid = (threadIdx.x + blockIdx.x*blockDim.x);
+	int timestepid = (threadIdx.y + blockIdx.y*blockDim.y);
 
-	if(ordinal >= timesteps)
+	if(entryid*2 >= entries || timestepid >= timesteps)
 		return;
 
-	for(int i = 0; i < entries; ++i)
-	{
-		sum += data[i*timesteps + ordinal];
-	}
-
-	data[ordinal] = sum/entries;
+	data[GETDATA(entryid, timestepid)] += data[GETDATA(((entries-1)/2 + 1 + entryid), timestepid)];
+	data[GETDATA(entryid, timestepid)] /= 2;
 }
 
