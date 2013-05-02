@@ -601,7 +601,7 @@ class MainWindow(QMainWindow):
 				#print "Length of line is: ",len(line)
 				tempList=[]
 				if (checkLength==line.strip("\n ").split(",")):
-				print "CHECK!"
+					print "CHECK!"
 					for item in line.strip("\n ").split(","):
 						tempList.append(float(item))
 						#map(float,tempList)
