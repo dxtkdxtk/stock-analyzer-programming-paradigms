@@ -423,12 +423,102 @@ class MainWindow(QMainWindow):
 
 
 	def inverseAnalysis(self):
-		pass
+		#convery the inputs to text
+		tickerSymbolOne = unicode(self.tickerOne.text())
+		tickerSymbolTwo = unicode(self.tickerTwo.text())
+	
+		#pull dates from calendar	
+		dateStart = self.compareStart.selectedDate()
+		dateFinish = self.compareFinish.selectedDate()	
+		#convert dates to correct format for ystockquote
+		dateStartString=convertDate(dateStart)
+		dateFinishString=convertDate(dateFinish)
+		
+		#graph first output
+		outputString1 = loadHistoricalData(tickerSymbolOne, dateStartString, dateFinishString)
+		outputString2 = loadHistoricalData(tickerSymbolTwo, dateStartString, dateFinishString)
+		
+		oString1=""		
+		for item in outputString1.split("], ["):
+			oString1+=item
+			oString1+="\n"		
+		
+		i=0
+		price1=[]
+		for line in oString1.split("\n"):
+			if ((i!=0) and (i!=(len(oString1.split("\n"))-1))):
+				item =line.split(",")
+				price1.append(float(item[4].strip('\"\' ')))
+			i=i+1
+				
+		
+		oString2=""		
+		for item in outputString2.split("], ["):
+			oString2+=item
+			oString2+="\n"				
+		
+		
+		i=0
+		price2=[]
+		for line in oString2.split("\n"):
+			if ((i!=0) and (i!=(len(oString2.split("\n"))-1))):
+				item =line.split(",")
+				price2.append(float(item[4].strip('\"\' ')))
+			i=i+1
+			
+		finalString=""
+		i=0
+		for item in price1:
+				finalString+="("
+				finalString+=str(item)
+				finalString+=","
+				finalString+=str(price2[i])
+				finalString+=")"
+				if (i != len(price1)-1):
+						finalString+="\n"
+				i=i+1
+				
+				
+		print "String 1\n"
+		print outputString1
+		print "String 2\n"
+		print outputString2
+		print "Final String\n"
+		print finalString
+		
+		FilePath = QFileDialog.getSaveFileName()
+		if(FilePath):
+			f=open(FilePath,'w')
+			f.write(finalString)
+		
 
 
 	def inverseAnalysisCUDA(self):		
-		pass
-		#load from field, parse into list of lists, pass to cuda, graph values returned		
+		dataString = self.dataToAnalyze.toPlainText()
+		dataString = str(dataString)
+		dataList=[]
+		#i=0
+		#length=dataString.split("\n")
+		for line in dataString.split("\n"):
+				tempList=[]
+				for item in line.strip("\n ").split(","):
+					print item	
+					tempList.append(float(item))
+					#map(float,tempList)
+				dataList.append(tempList)
+		#load from field, parse into list of lists, pass to cuda, graph values returned
+		print "\n"
+		print dataList
+		#outputList= [  [1, 2, 3],  [2, 3, 4]   ]
+
+		handle = SACudaProxy.SACudaProxy()
+		dataReturn = handle.FindInverseTrends(dataList)
+		
+		self.MAGraph.clear()
+		if (len(dataReturn)<15):
+				self.MAGraph.plot(dataReturn,pen='b',symbol='x')
+		else:
+				self.compareGraph.plot(dataReturn,pen='b')			
 
 	def marketAnalysis(self):
 		#get dates
@@ -512,9 +602,14 @@ class MainWindow(QMainWindow):
 		#outputList= [  [1, 2, 3],  [2, 3, 4]   ]
 
 		handle = SACudaProxy.SACudaProxy()
-		test = handle.CalculateMarketAverage(dataList)
-		print test
-
+		dataReturn = handle.CalculateMarketAverage(dataList)
+		
+		self.MAGraph.clear()
+		if (len(dataReturn)<15):
+				self.MAGraph.plot(dataReturn,pen='b',symbol='x')
+		else:
+				self.compareGraph.plot(dataReturn,pen='b')		
+	
 	
 	def date_changed(self):
 		# Indicate to the user that the date has changed
