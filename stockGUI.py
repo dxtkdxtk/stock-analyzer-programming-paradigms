@@ -592,13 +592,15 @@ class MainWindow(QMainWindow):
 		dataString = str(dataString)
 		#convert to list of lists
 		dataList=[]
-		checkLength=len(dataString.split("\n")[0])
+
+		checkLength=dataString.split("\n")[0].strip("\n ").split(",")
+
 		print "Check length is: ",checkLength
 		for line in dataString.split("\n"):
 				#make sure all stocks have existed for the same amount of time
 				print "Length of line is: ",len(line)
-				if (len(line)==checkLength):
-					tempList=[]
+				tempList=[]
+				if (checkLength==line.strip("\n ").split(",")):
 					for item in line.strip("\n ").split(","):
 						tempList.append(float(item))
 						#map(float,tempList)
