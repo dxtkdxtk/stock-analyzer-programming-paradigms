@@ -593,8 +593,10 @@ class MainWindow(QMainWindow):
 		#convert to list of lists
 		dataList=[]
 		checkLength=len(dataString.split("\n")[0])
+		print "Check length is: ",checkLength
 		for line in dataString.split("\n"):
 				#make sure all stocks have existed for the same amount of time
+				print "Length of line is: ",len(line)
 				if (len(line)==checkLength):
 					tempList=[]
 					for item in line.strip("\n ").split(","):
