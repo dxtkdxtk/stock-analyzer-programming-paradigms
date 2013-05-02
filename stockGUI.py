@@ -461,15 +461,18 @@ class MainWindow(QMainWindow):
 		dataString = self.dataToAnalyze.toPlainText()
 		dataString = str(dataString)
 		dataList=[]
+		#i=0
+		#length=dataString.split("\n")
 		for line in dataString.split("\n"):
 				tempList=[]
-				for item in line.split(","):
+				for item in line.strip("\n ").split(","):
 					print item	
 					tempList.append(float(item))
+					#map(float,tempList)
 				dataList.append(tempList)
 		#load from field, parse into list of lists, pass to cuda, graph values returned
-		
-		
+		print "\n"
+		print dataList
 		#outputList= [  [1, 2, 3],  [2, 3, 4]   ]
 
 		handle = SACudaProxy.SACudaProxy()
@@ -545,6 +548,7 @@ class MainWindow(QMainWindow):
 				outputList.append(tempList)	
 
 		dataString=""
+		j=0
 		for item in outputList:
 			i=0
 			for data in item:
@@ -554,7 +558,9 @@ class MainWindow(QMainWindow):
 				else:
 					dataString+=str(data)
 				i=i+1
-			dataString+="\n"
+			j=j+1
+			if (j!=len(outputLis)):
+				dataString+="\n"
 
 
 		FilePath = QFileDialog.getSaveFileName()
