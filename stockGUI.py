@@ -458,14 +458,21 @@ class MainWindow(QMainWindow):
 
 
 	def marketAnalysisCUDA(self):		
-		pass
+		dataString = self.dataToAnalyze.toPlainText()
+		dataString = str(dataString)
+		dataList=[]
+		for line in dataString.split("\n"):
+				tempList=[]
+				for item in line.split(","):
+					tempList.append(item)
+				dataList.append(tempList)
 		#load from field, parse into list of lists, pass to cuda, graph values returned
 		
 		
 		#outputList= [  [1, 2, 3],  [2, 3, 4]   ]
 
 		handle = SACudaProxy.SACudaProxy()
-		test = handle.CalculateMarketAverage(outputList)
+		test = handle.CalculateMarketAverage(dataList)
 		
 
 	def marketAnalysis(self):
@@ -535,24 +542,24 @@ class MainWindow(QMainWindow):
 					i=i+1
 				outputList.append(tempList)	
 
-			dataString=""
-			for item in outputList:
-				i=0
-				for data in item:
-					if (i!=len(item)):
-						dataString+=dat,","
-					else:
-						dataString+=dat
-					i=i+1
-				dataString+="\n"
-				
-			self.dataToAnalyze.setText(dataString)
+		dataString=""
+		for item in outputList:
+			i=0
+			for data in item:
+				if (i!=len(item)-1):
+					dataString+=str(data)
+					dataString+=","
+				else:
+					dataString+=str(data)
+				i=i+1
+			dataString+="\n"
 
-			#FilePath = QFileDialog.getSaveFileName()
-			#if(FilePath):
-			#	f=open(FilePath,'w')
-			#	f.write(str(self.dataToAnalyze.toPlainText()))
-			#
+
+		FilePath = QFileDialog.getSaveFileName()
+		if(FilePath):
+			f=open(FilePath,'w')
+			f.write(dataString)
+			
 
 
 	
