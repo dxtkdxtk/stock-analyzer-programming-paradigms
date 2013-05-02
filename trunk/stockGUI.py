@@ -595,7 +595,7 @@ class MainWindow(QMainWindow):
 		checkLength=len(dataString.split("\n")[0])
 		for line in dataString.split("\n"):
 				#make sure all stocks have existed for the same amount of time
-				if (len(line)==checkLenth):
+				if (len(line)==checkLength):
 					tempList=[]
 					for item in line.strip("\n ").split(","):
 						tempList.append(float(item))
