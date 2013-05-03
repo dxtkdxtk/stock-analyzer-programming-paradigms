@@ -50,8 +50,7 @@ extern "C" DoubleArray CalculateMarketAverage(double * h_data, int entries, int 
 
 	for(int i = entries; i > 1; i = ((i-1)/2)+1)
 	{
-		printf("%d %d %d %d\n", i, ((entries/2 + entries%2)-1)/32 + 1, ((timesteps-1)/32 + 1), timesteps);
-		CalculateMarketAverageKernelReduce<<<dim3(((entries/2 + entries%2)-1)/32 + 1, (timesteps-1/32 + 1)), dim3(32, 32)>>>(d_data, i, timesteps);
+		CalculateMarketAverageKernelReduce<<<dim3(((i/2 + i%2)-1)/32 + 1, (timesteps-1/32 + 1)), dim3(32, 32)>>>(d_data, i, timesteps);
 		cudaDeviceSynchronize();
 	}
 
