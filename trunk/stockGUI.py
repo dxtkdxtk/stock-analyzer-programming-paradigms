@@ -174,20 +174,24 @@ class MainWindow(QMainWindow):
 		
 		#tab6 => comparison graph
 		#create components
+		self.comparisonGraphLabel=QLabel("Comparison Graph:")
 		self.compareGraph=pg.PlotWidget()
 		#create tab
 		tab6=QWidget()
 		layout6=QVBoxLayout(tab6)
+		layout6.addWidget(self.comparisonGraphLabel)
 		layout6.addWidget(self.compareGraph)
 		self.tab_widget.addTab(tab6,"Comparison Graph")		
 		
 		#tap9 => inverse analsis graph
 		#out of order but alot of work to rename #s
 		#create components
+		self.inverseGraphLabel=QLabel("Inverse Analysis:")
 		self.inverseGraph=pg.PlotWidget()
 		#create tab
 		tab9=QWidget()
 		layout9=QVBoxLayout(tab9)
+		layout9.addWidget(self.inverseGraphLabel)
 		layout9.addWidget(self.inverseGraph)
 		self.tab_widget.addTab(tab9,"Inverse Analysis Graph")		
 		
@@ -227,10 +231,12 @@ class MainWindow(QMainWindow):
 		
 		#tab8 => market average graph
 		#create components
+		self.MAGraphLabel=QLabel("Market Average:")
 		self.MAGraph=pg.PlotWidget()
 		#create tab
 		tab8=QWidget()
 		layout8=QVBoxLayout(tab8)
+		layout8.addWidget(self.MAGraphLabel)
 		layout8.addWidget(self.MAGraph)
 		self.tab_widget.addTab(tab8,"Market Average Graph")
 
@@ -514,7 +520,7 @@ class MainWindow(QMainWindow):
 			stockTwoList.append(line[1])
 		
 		#plot stocks
-		self.inverseGraph.plot(stockOneList,pen='b',symbol='x')
+		self.inverseGraph.plot(stockOneList,pen='b',symbol='+')
 		self.inverseGraph.plot(stockTwoList,pen='g',symbol='o')
 		
 		#plot markers based on CUDA call
@@ -614,7 +620,7 @@ class MainWindow(QMainWindow):
 		#graph results
 		self.MAGraph.clear()
 		if (len(dataReturn)<15):
-				self.MAGraph.plot(dataReturn,pen='b',symbol='x')
+				self.MAGraph.plot(dataReturn,pen='b',symbol='+')
 		else:
 				self.MAGraph.plot(dataReturn,pen='b')		
 	
