@@ -58,6 +58,8 @@ class MainWindow(QMainWindow):
 	def __init__(self, parent=None):
 		super(MainWindow,self).__init__(parent)
 		
+		self.cudaHandle = SACudaProxy.SACudaProxy()
+		
 		#Set the title and size of window
 		self.setWindowTitle("Stock Analyzer")
 		self.setGeometry(0,0,1000,675)
@@ -506,8 +508,7 @@ class MainWindow(QMainWindow):
 				dataList.append(tempList)
 
 		#pass to CUDA
-		handle = SACudaProxy.SACudaProxy()
-		dataReturn = handle.FindInverseTrends(dataList)
+		dataReturn = self.cudaHandle.FindInverseTrends(dataList)
 		
 		#graph the return data
 		self.inverseGraph.clear()
@@ -613,8 +614,8 @@ class MainWindow(QMainWindow):
 					dataList.append(tempList)
 				
 		#pass to CUDA
-		handle = SACudaProxy.SACudaProxy()
-		dataReturn = handle.CalculateMarketAverage(dataList)
+		
+		dataReturn = self.cudaHandle.CalculateMarketAverage(dataList)
 		
 		#graph results
 		self.MAGraph.clear()
