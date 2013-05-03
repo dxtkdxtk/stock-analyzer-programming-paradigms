@@ -51,18 +51,19 @@ extern "C" DoubleArray CalculateMarketAverage(double * h_data, int entries, int 
 	for(int i = entries; i > 1; i = ((i-1)/2)+1)
 	{
 		printf("%d %d %d %d\n", i, ((entries/2 + entries%2)-1)/32 + 1, ((timesteps-1)/32 + 1), timesteps);
-		CalculateMarketAverageKernel<<<dim3(((entries/2 + entries%2)-1)/32 + 1, (timesteps-1/32 + 1)), dim3(32, 32)>>>(d_data, entries, timesteps);
+		CalculateMarketAverageKernelReduce<<<dim3(((entries/2 + entries%2)-1)/32 + 1, (timesteps-1/32 + 1)), dim3(32, 32)>>>(d_data, i, timesteps);
 		cudaDeviceSynchronize();
 	}
+
+	CalculateMarketAverageKernelFinalize<<<(entries-1)/512 + 1,512>>>(d_data, entries, timesteps);
 	
-	REQUIRE_SUCCESS(cudaMemcpy((void *)h_data, (void *)d_data, sizeof(double) * timesteps, cudaMemcpyDeviceToHost));
+	REQUIRE_SUCCESS(cudaMemcpy((void *)h_data, (void *)d_data, sizeof(double) * timesteps*entries, cudaMemcpyDeviceToHost));
 
 	cudaFree((void *)d_data);
 	//************************* END CUDA *************************
 	
 	returnvalue.values = h_data;
-	//returnvalue.length = timesteps;
-	returnvalue.length = timesteps * entries;
+	returnvalue.length = timesteps;
 
 	return returnvalue;
 }
