@@ -1,8 +1,64 @@
 #include "SACudaKernel.h"
 
-__global__ void FindInverseTrendsKernel(double * data, int length)
+__global__ void FindInverseTrendsKernel(double * data, int * length)
 {
+	int timestepid = threadIdx.x + blockIdx.x*blockDim.x;
+	float sum = 0;
+	int count = 0;
+	int oldlength = *length;
+	bool interest = false;
+
+	if(timestepid >= *length)
+		return;
+
+	for(int i = -5; i < 6; ++i) //computes moving average
+		if(!((timestepid + i*2) >= *length || (timestepid + i*2) < 0))
+		{
+			sum += data[(timestepid + i*2)];
+			++count;
+		}
+
+	__syncthreads(); // we want each thread to write their data simultaneously
+
+	data[timestepid] = sum / count; // now both stocks are moving averages
+
+	__syncthreads();
+
+	if(timestepid % 2 == 0)
+		data[timestepid] /=  data[timestepid+1]; // compute ratio
+
+	if(timestepid == 0)
+		*length = 0;
+
+	__syncthreads();
+
+	if(timestepid % 2 == 0)
+		if(timestepid+6 < oldlength)
+		{
+			float difference = data[timestepid+6] - data[timestepid];
+			float threshhold = data[timestepid]*.025;
+			if(difference < 0)
+				difference *= -1;
+
+			if(threshhold < 0)
+				threshhold *= -1;
+
+			if(difference > threshhold)
+			{
+				atomicAdd(length, 1);
+				interest = true;
+			}
+		}
 	
+	__syncthreads();
+
+	if(timestepid % 2 == 0)
+	{
+		if(!interest)
+			data[timestepid/2] = -1;
+		else
+			data[timestepid/2] = 1;
+	}
 }
 
 #define DATAINDEX(e, t) ((e<entries)?(e*timesteps + t):-1)

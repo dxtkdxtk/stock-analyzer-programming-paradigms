@@ -17,7 +17,7 @@ struct DoubleArray
 	double * values;
 };
 
-extern "C" IntArray FindInverseTrends(double * h_data, int length);
+extern "C" IntArray FindInverseTrends(double * h_data, int h_length);
 extern "C" DoubleArray CalculateMarketAverage(double * h_data, int entries, int timesteps);
 
 #endif
