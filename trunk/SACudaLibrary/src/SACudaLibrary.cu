@@ -5,11 +5,11 @@
 #include "SACudaLibrary.h"
 #include "SACudaKernel.h"
 
-extern "C" IntArray FindInverseTrends(double * h_data, int length)
+extern "C" IntArray FindInverseTrends(double * h_data, int h_length)
 {
 	IntArray returnvalue;
-
-	if(length == 0)
+	int oldlength = h_length;
+	if(h_length == 0)
 	{
 		returnvalue.length = 0;
 		return returnvalue;
@@ -17,17 +17,34 @@ extern "C" IntArray FindInverseTrends(double * h_data, int length)
 
 	//*************************** CUDA ***************************
 	double * d_data;
+	int * d_length;
 
-	REQUIRE_SUCCESS(cudaMalloc((void **)&d_data, sizeof(double) * length));
-	REQUIRE_SUCCESS(cudaMemcpy((void *)d_data, h_data, sizeof(double) * length, cudaMemcpyDeviceToHost));
+	REQUIRE_SUCCESS(cudaMalloc((void **)&d_data, sizeof(double) * h_length));
+	REQUIRE_SUCCESS(cudaMalloc((void **)&d_length, sizeof(int)));
+	REQUIRE_SUCCESS(cudaMemcpy((void *)d_data, (void *)h_data, sizeof(double) * h_length, cudaMemcpyHostToDevice));
+	REQUIRE_SUCCESS(cudaMemcpy((void *)d_length, (void *)&h_length, sizeof(int), cudaMemcpyHostToDevice));
 
-	FindInverseTrendsKernel<<<1,1>>>(d_data, length);
+	FindInverseTrendsKernel<<<(h_length-1)/1024 + 1,1024>>>(d_data, d_length);
+
+	REQUIRE_SUCCESS(cudaMemcpy((void *)&h_length, (void *)d_length, sizeof(int), cudaMemcpyDeviceToHost));
+	if(h_length != 0)
+		REQUIRE_SUCCESS(cudaMemcpy((void *)h_data, (void *)d_data, sizeof(double) * oldlength, cudaMemcpyDeviceToHost));
 
 	cudaFree((void *)d_data);
+	cudaFree((void *)d_length);
 	//************************* END CUDA *************************
 
+	int found = 0;
+	int i = 0;
+	returnvalue.values = (int *)malloc(sizeof(int) * h_length);
+	while(found < h_length)
+	{
+		if(h_data[i] > 0)
+			returnvalue.values[found++] = i+2;
+		++i;
+	}
 	
-	returnvalue.length = 0;
+	returnvalue.length = h_length;
 
 	return returnvalue;
 }

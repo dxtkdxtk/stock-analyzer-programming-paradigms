@@ -502,14 +502,14 @@ class MainWindow(QMainWindow):
 		dataList=[]
 		for line in dataString.split("\n"):
 				tempList=[]
-				for item in line.strip("\n ").split(","):
+				for item in line.strip("\n ()").split(","):
 					tempList.append(float(item))
 					#map(float,tempList)
 				dataList.append(tempList)
 
 		#pass to CUDA
 		dataReturn = self.cudaHandle.FindInverseTrends(dataList)
-		
+
 		#graph the return data
 		self.inverseGraph.clear()
 		
@@ -521,13 +521,13 @@ class MainWindow(QMainWindow):
 			stockTwoList.append(line[1])
 		
 		#plot stocks
-		self.inverseGraph.plot(stockOneList,pen='b',symbol='+')
-		self.inverseGraph.plot(stockTwoList,pen='g',symbol='o')
+		self.inverseGraph.plot(stockOneList,pen='b')
+		self.inverseGraph.plot(stockTwoList,pen='g')
 		
 		#plot markers based on CUDA call
 		for item in dataReturn:
 			avg = (stockOneList[item]+stockTwoList[item])/2
-			self.graph.plot([item-1,item,item+1],[avg,avg,avg],pen='r',symbol="o")
+			self.inverseGraph.plot([item-1,item,item+1],[avg,avg,avg],pen='r')
 		#SHOULD prob change symbol to dif symbol than stocks.. forget what the others are
 
 	def marketAnalysis(self):
