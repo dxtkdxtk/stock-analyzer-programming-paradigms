@@ -1,0 +1,1 @@
+Analyze stocks using pyqt GUI with cuda backend
